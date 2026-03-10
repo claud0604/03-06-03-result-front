@@ -1,7 +1,7 @@
 // ========== APL Result Page — Constants ==========
 
 var API_CONFIG = {
-    BASE_URL: 'http://localhost:3063',
+    BASE_URL: 'https://api-030603-result.apls.kr',
     ENDPOINTS: {
         AUTH_VERIFY: '/api/auth/verify',
         RESULT: '/api/result/{id}',
