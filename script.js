@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function () {
     initScrollPosition();
     applyTranslations();
     initIntroAnimation();
-    loadLogoFromGCS();
 
     var urlParams = new URLSearchParams(window.location.search);
     currentCustomerId = urlParams.get('id');
@@ -37,110 +36,6 @@ function initIntroAnimation() {
         var overlay = document.getElementById('introOverlay');
         if (overlay) overlay.classList.add('hidden');
     }, 2300);
-}
-
-// ========== Load Logo from GCS (transparent background) ==========
-function loadLogoFromGCS() {
-    fetch(EXPERT_API_BASE + '/api/upload/view-urls', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gcsKeys: ['02-expert/00-basic-setting/APLCOLOR_logo_nobg.png'] })
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(json) {
-        if (json.success && json.data && json.data.length > 0) {
-            var logoUrl = json.data[0].presignedUrl;
-            document.querySelectorAll('.intro-logo, .login-logo').forEach(function(img) {
-                img.src = logoUrl;
-            });
-            // Store for result page logo
-            window._gcsLogoUrl = logoUrl;
-        }
-    })
-    .catch(function(err) {
-        console.warn('GCS logo load failed, using fallback:', err);
-    });
-}
-
-// ========== Load Preset Images from GCS ==========
-function loadPresetImagesFromGCS(data) {
-    var cd = data.colorDiagnosis || {};
-    var fa = data.faceAnalysis || {};
-    var gender = data.customerInfo ? data.customerInfo.gender : 'female';
-    var gcsGender = gender === 'male' ? 'male' : 'female';
-
-    var gcsKeys = [
-        '02-expert/00-basic-setting/main-img.png',
-        '02-expert/02-tonetable/tonetable.png'
-    ];
-
-    if (cd.type) {
-        gcsKeys.push('02-expert/01-personalcolor-palette/' + gcsGender + '/' + cd.type + '-panel.jpg');
-    }
-    if (fa.type && !fa.typeImageUrl) {
-        gcsKeys.push('02-expert/30-facetype/' + gcsGender + '/' + fa.type + '.jpg');
-    }
-
-    ['03-contrast-face', '04-contrast-outfit'].forEach(function(folder) {
-        ['low', 'mid', 'high'].forEach(function(level) {
-            gcsKeys.push('02-expert/' + folder + '/' + gcsGender + '-' + level + '-contrast.png');
-        });
-    });
-
-    fetch(EXPERT_API_BASE + '/api/upload/view-urls', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gcsKeys: gcsKeys })
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(json) {
-        if (!json.success || !json.data) return;
-
-        var urlMap = {};
-        json.data.forEach(function(item) {
-            urlMap[item.gcsKey] = item.presignedUrl;
-        });
-
-        var mainImg = document.getElementById('res_mainIllustImg');
-        if (mainImg && urlMap['02-expert/00-basic-setting/main-img.png']) {
-            mainImg.src = urlMap['02-expert/00-basic-setting/main-img.png'];
-        }
-
-        var toneTableImg = document.getElementById('res_toneTableImg');
-        if (toneTableImg && urlMap['02-expert/02-tonetable/tonetable.png']) {
-            toneTableImg.src = urlMap['02-expert/02-tonetable/tonetable.png'];
-        }
-
-        if (cd.type) {
-            var paletteKey = '02-expert/01-personalcolor-palette/' + gcsGender + '/' + cd.type + '-panel.jpg';
-            var paletteImg = document.getElementById('res_paletteImg');
-            if (paletteImg && urlMap[paletteKey]) {
-                paletteImg.src = urlMap[paletteKey];
-                paletteImg.style.display = '';
-            }
-        }
-
-        if (fa.type && !fa.typeImageUrl) {
-            var faceKey = '02-expert/30-facetype/' + gcsGender + '/' + fa.type + '.jpg';
-            if (urlMap[faceKey]) setPhoto('res_faceTypeImg', urlMap[faceKey]);
-        }
-
-        ['03-contrast-face', '04-contrast-outfit'].forEach(function(folder) {
-            var gridId = folder === '03-contrast-face' ? 'res_faceContrastGrid' : 'res_fashionContrastGrid';
-            var grid = document.getElementById(gridId);
-            if (!grid) return;
-            grid.querySelectorAll('.prev-contrast-level').forEach(function(item) {
-                var level = item.getAttribute('data-level');
-                var levelName = level === 'middle' ? 'mid' : level;
-                var key = '02-expert/' + folder + '/' + gcsGender + '-' + levelName + '-contrast.png';
-                var img = item.querySelector('.prev-contrast-img');
-                if (img && urlMap[key]) img.src = urlMap[key];
-            });
-        });
-    })
-    .catch(function(err) {
-        console.warn('GCS preset images load failed:', err);
-    });
 }
 
 // ========== Show Login ==========
@@ -312,11 +207,15 @@ function renderResult(data) {
     var st = data.styling || {};
     var photos = data.customerPhotos || {};
     var gender = data.customerInfo ? data.customerInfo.gender : 'female';
-    var genderFolder = gender === 'male' ? 'man' : 'woman';
+    var genderFolder = gender === 'male' ? 'male' : 'female';
 
-    // Logo (loaded from GCS in loadLogoFromGCS)
+    // Logo + Main Illustration + Tone Table
     var logoImg = document.getElementById('res_logoImg');
-    if (logoImg && window._gcsLogoUrl) logoImg.src = window._gcsLogoUrl;
+    if (logoImg) logoImg.src = 'assets/logo_nobg.png';
+    var mainImg = document.getElementById('res_mainIllustImg');
+    if (mainImg) mainImg.src = 'assets/main-img.png';
+    var toneTableImg = document.getElementById('res_toneTableImg');
+    if (toneTableImg) toneTableImg.src = 'assets/tonetable.png';
 
     // Customer name
     setText('res_customerName', data.customerInfo ? data.customerInfo.name : '');
@@ -331,11 +230,11 @@ function renderResult(data) {
     setChipActive('res_chromaChips', cd.indicators ? cd.indicators.chroma : '');
     setChipActive('res_clarityChips', cd.indicators ? cd.indicators.clarity : '');
 
-    // Color type + palette (image loaded from GCS in loadPresetImagesFromGCS)
+    // Color type + palette
     setText('res_colorType', cd.type || '');
     var paletteImg = document.getElementById('res_paletteImg');
     if (paletteImg) {
-        if (cd.type) { paletteImg.style.display = ''; }
+        if (cd.type) { paletteImg.src = 'assets/palette/' + genderFolder + '/' + cd.type + '-panel.jpg'; paletteImg.style.display = ''; }
         else { paletteImg.style.display = 'none'; }
     }
 
@@ -346,9 +245,9 @@ function renderResult(data) {
     // Tone markers
     renderToneMarkers(cd);
 
-    // Contrast grids (selected state only; images loaded from GCS)
-    renderContrastGrid('res_faceContrastGrid', cd.faceContrastLevel);
-    renderContrastGrid('res_fashionContrastGrid', cd.fashionContrastLevel);
+    // Contrast grids
+    renderContrastGrid('res_faceContrastGrid', cd.faceContrastLevel, 'contrast-face', genderFolder);
+    renderContrastGrid('res_fashionContrastGrid', cd.fashionContrastLevel, 'contrast-outfit', genderFolder);
 
     // Sliders — Color section
     setSlider('res_colorExampleSlider', 'res_colorExampleBlock', resolveImgArray(cd.colorExamples));
@@ -361,10 +260,13 @@ function renderResult(data) {
     setSlider('res_hairSlider', 'res_hairBlock', resolveImgArray(cd.colorUsage ? cd.colorUsage.hair : null));
     setSlider('res_accColorSlider', 'res_accColorBlock', resolveImgArray(cd.colorUsage ? cd.colorUsage.accessory : null));
 
-    // Face analysis (face type image loaded from GCS in loadPresetImagesFromGCS)
+    // Face analysis
     setPhoto('res_faceCustomerPhoto', resolveImg(photos.face ? photos.face.front : null));
     var faceTypeUrl = fa.typeImageUrl ? resolveImg(fa.typeImageUrl) : null;
-    if (faceTypeUrl) setPhoto('res_faceTypeImg', faceTypeUrl);
+    if (!faceTypeUrl && fa.type) {
+        faceTypeUrl = 'assets/facetype/' + genderFolder + '/' + fa.type + '.jpg';
+    }
+    setPhoto('res_faceTypeImg', faceTypeUrl);
     setText('res_faceTypeName', fa.type || '');
 
     // Eyebrow
@@ -408,8 +310,6 @@ function renderResult(data) {
     setSlider('res_bagSlider', 'res_bagBlock', resolveImgArray(rec.bags));
     setSlider('res_shoesSlider', 'res_shoesBlock', resolveImgArray(rec.shoes));
 
-    // Load preset images from GCS
-    loadPresetImagesFromGCS(data);
 }
 
 // ========== Render Utilities ==========
@@ -463,11 +363,14 @@ function renderToneMarkers(cd) {
     (tones.point || []).forEach(function(t) { createMarker(t, 'prev-tone-marker-point'); });
 }
 
-function renderContrastGrid(gridId, selectedLevel) {
+function renderContrastGrid(gridId, selectedLevel, folder, genderFolder) {
     var grid = document.getElementById(gridId);
     if (!grid) return;
+    var fileMap = { low: genderFolder + '-low-contrast.png', middle: genderFolder + '-mid-contrast.png', high: genderFolder + '-high-contrast.png' };
     grid.querySelectorAll('.prev-contrast-level').forEach(function(item) {
         var level = item.getAttribute('data-level');
+        var img = item.querySelector('.prev-contrast-img');
+        if (img) img.src = 'assets/' + folder + '/' + fileMap[level];
         item.classList.toggle('selected', level === selectedLevel);
     });
 }
