@@ -4,6 +4,27 @@ var customerData = null;
 var imageUrls = {};
 var currentCustomerId = null;
 
+// ========== Theme Toggle ==========
+function initTheme() {
+    var saved = localStorage.getItem('apl-result-theme');
+    if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+    }
+}
+function toggleTheme() {
+    var current = document.documentElement.getAttribute('data-theme');
+    var isDark;
+    if (current) {
+        isDark = current === 'dark';
+    } else {
+        isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    var next = isDark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('apl-result-theme', next);
+}
+initTheme();
+
 // ========== Init ==========
 document.addEventListener('DOMContentLoaded', function () {
     initScrollPosition();

@@ -24,7 +24,7 @@
             <h2 class="login-title" data-i18n="res_verify_title">View Your Diagnosis Results</h2>
             <p class="login-desc" id="loginDesc" data-i18n="res_verify_subtitle">Please verify your identity to view results.</p>
 
-            <!-- Language Selector -->
+            <!-- Language & Theme Selector -->
             <div class="lang-selector">
                 <label data-i18n="res_lang_label">Language</label>
                 <select id="langSelect" onchange="setLang(this.value)">
@@ -33,6 +33,10 @@
                     <option value="ja">日本語</option>
                     <option value="zh">中文</option>
                 </select>
+                <button class="theme-toggle-btn" id="themeToggleLogin" onclick="toggleTheme()" aria-label="Toggle theme">
+                    <span class="theme-icon-sun">&#9788;</span>
+                    <span class="theme-icon-moon">&#9790;</span>
+                </button>
             </div>
 
             <form class="login-form" id="loginForm" onsubmit="handleVerify(event)">
@@ -347,6 +351,11 @@
             <button class="prev-float-btn" onclick="scrollToSection('res_sec_body')" data-i18n="res_float_body">Body</button>
             <div class="prev-float-divider"></div>
             <button class="prev-float-btn" onclick="scrollToSection('res_sec_styling')" data-i18n="res_float_style">Style</button>
+            <div class="prev-float-divider"></div>
+            <button class="prev-float-btn theme-float-btn" onclick="toggleTheme()">
+                <span class="theme-icon-sun">&#9788;</span>
+                <span class="theme-icon-moon">&#9790;</span>
+            </button>
         </div>
         <button class="prev-float-toggle" id="resultFloatToggle">&#8801;</button>
     </div>
