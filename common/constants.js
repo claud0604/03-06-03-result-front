@@ -10,6 +10,7 @@ var API_CONFIG = {
 };
 
 var PRESET_API_BASE = 'https://facefree-control-api.apls.kr/api/presets';
+var EXPERT_API_BASE = 'https://api-030602-expert.apls.kr';
 
 // Tone chart marker positions (percentage-based)
 var TONE_POSITIONS = {

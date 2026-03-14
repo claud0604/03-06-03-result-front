@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initScrollPosition();
     applyTranslations();
     initIntroAnimation();
+    loadLogoFromGCS();
 
     var urlParams = new URLSearchParams(window.location.search);
     currentCustomerId = urlParams.get('id');
@@ -36,6 +37,29 @@ function initIntroAnimation() {
         var overlay = document.getElementById('introOverlay');
         if (overlay) overlay.classList.add('hidden');
     }, 2300);
+}
+
+// ========== Load Logo from GCS (transparent background) ==========
+function loadLogoFromGCS() {
+    fetch(EXPERT_API_BASE + '/api/upload/view-urls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gcsKeys: ['02-expert/00-basic-setting/APLCOLOR_logo_nobg.png'] })
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(json) {
+        if (json.success && json.data && json.data.length > 0) {
+            var logoUrl = json.data[0].presignedUrl;
+            document.querySelectorAll('.intro-logo, .login-logo').forEach(function(img) {
+                img.src = logoUrl;
+            });
+            // Store for result page logo
+            window._gcsLogoUrl = logoUrl;
+        }
+    })
+    .catch(function(err) {
+        console.warn('GCS logo load failed, using fallback:', err);
+    });
 }
 
 // ========== Show Login ==========
@@ -211,7 +235,7 @@ function renderResult(data) {
 
     // Logo + Main Illustration
     var logoImg = document.getElementById('res_logoImg');
-    if (logoImg) logoImg.src = PRESET_API_BASE + '/00-basic-setting/APLCOLOR_logo.png';
+    if (logoImg) logoImg.src = window._gcsLogoUrl || PRESET_API_BASE + '/00-basic-setting/APLCOLOR_logo.png';
     var mainImg = document.getElementById('res_mainIllustImg');
     if (mainImg) mainImg.src = PRESET_API_BASE + '/00-basic-setting/main-img.png';
     var toneTableImg = document.getElementById('res_toneTableImg');
