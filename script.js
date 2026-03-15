@@ -213,7 +213,13 @@ function showError(msg) {
 // ========== Resolve Image URL ==========
 function resolveImg(key) {
     if (!key) return null;
-    if (key.startsWith('data:') || key.startsWith('http')) return key;
+    if (key.startsWith('data:')) return key;
+    // presigned URL(?X-Goog-) → GCS 키 추출 → imageUrls 맵에서 fresh URL 조회
+    if (key.startsWith('https://storage.googleapis.com/') && key.indexOf('?X-Goog-') > -1) {
+        var m = key.match(/^https:\/\/storage\.googleapis\.com\/[^/]+\/(.+?)\?/);
+        if (m && imageUrls[m[1]]) return imageUrls[m[1]];
+    }
+    if (key.startsWith('http')) return key;
     return imageUrls[key] || null;
 }
 function resolveImgArray(arr) {
