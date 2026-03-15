@@ -285,7 +285,21 @@ function renderResult(data) {
     setPhoto('res_faceCustomerPhoto', resolveImg(photos.face ? photos.face.front : null));
     var faceTypeUrl = fa.typeImageUrl ? resolveImg(fa.typeImageUrl) : null;
     if (!faceTypeUrl && fa.type) {
-        faceTypeUrl = 'assets/facetype/' + genderFolder + '/' + fa.type + '.jpg';
+        var faceTypeFileMap = {
+            'OVAL': 'oval.jpg', 'ROUND': 'round.jpg', 'OBLONG': 'oblong.jpg',
+            'DIAMOND': 'diamond.jpg', 'SQUARE': 'square.jpg',
+            'INVERTED_TRIANGLE': 'inverted-triangle.jpg', 'HEART': 'heart.jpg'
+        };
+        var faceTypeMaleFileMap = {
+            'OVAL': 'oval-male.jpg', 'ROUND': 'round-male.jpg',
+            'DIAMOND': 'diamond-male.jpg', 'SQUARE': 'square-male.jpg',
+            'INVERTED_TRIANGLE': 'inverted-triangle-male.jpg'
+        };
+        var ftMap = gender === 'male' ? faceTypeMaleFileMap : faceTypeFileMap;
+        var ftFile = ftMap[fa.type];
+        if (ftFile) {
+            faceTypeUrl = PRESET_API_BASE + '/30-facetype/' + genderFolder + '/' + ftFile;
+        }
     }
     setPhoto('res_faceTypeImg', faceTypeUrl);
     setText('res_faceTypeName', fa.type || '');
