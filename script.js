@@ -213,14 +213,7 @@ function showError(msg) {
 // ========== Resolve Image URL ==========
 function resolveImg(key) {
     if (!key) return null;
-    if (key.startsWith('data:')) return key;
-    // If it's a GCS presigned URL (legacy data), extract GCS key and look up fresh URL
-    if (key.startsWith('https://storage.googleapis.com/')) {
-        var m = key.match(/^https:\/\/storage\.googleapis\.com\/[^/]+\/(.+?)(\?|$)/);
-        if (m && imageUrls[m[1]]) return imageUrls[m[1]];
-        return key; // fallback to original URL
-    }
-    if (key.startsWith('http')) return key;
+    if (key.startsWith('data:') || key.startsWith('http')) return key;
     return imageUrls[key] || null;
 }
 function resolveImgArray(arr) {
